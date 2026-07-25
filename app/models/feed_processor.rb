@@ -1,8 +1,7 @@
 require 'nyct-subway.pb'
 
 class FeedProcessor
-  UPCOMING_TRIPS_TIME_ALLOWANCE = 30.minutes.to_i
-  UPCOMING_TRIPS_TIME_ALLOWANCE_FOR_SI = 60.minutes.to_i
+  UPCOMING_TRIPS_TIME_ALLOWANCE = 60.minutes.to_i
   SI_FEED = '-si'
   INACTIVE_TRIP_TIMEOUT = 10.minutes.to_i
   SCHEDULE_DISCREPANCY_THRESHOLD = -2.minutes.to_i
@@ -127,7 +126,7 @@ class FeedProcessor
     def valid_trip?(timestamp, entity, feed_id, route_id)
       return false unless entity.field?(:trip_update) && entity.trip_update.trip.nyct_trip_descriptor
       return false unless translate_route_id(entity.trip_update.trip.route_id) == route_id
-      upcoming_trip_time_allowance = feed_id == SI_FEED ? UPCOMING_TRIPS_TIME_ALLOWANCE_FOR_SI : UPCOMING_TRIPS_TIME_ALLOWANCE
+      upcoming_trip_time_allowance = UPCOMING_TRIPS_TIME_ALLOWANCE
       entity.trip_update.stop_time_update.reject! { |update|
         (update.departure || update.arrival)&.time.nil?
       }
