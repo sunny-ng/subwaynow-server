@@ -11,11 +11,13 @@ class RouteProcessor
       puts "Processing route #{route_id}, latency #{Time.current - Time.zone.at(timestamp)}"
 
       trips_by_direction = trips.group_by(&:direction)
+      soon_trips_by_direction = trips.select { |t| t.first_stop_arrival_time <= timestamp + 30.minutes.to_i }.group_by(&:direction)
 
       scheduled_trips = Scheduled::Trip.soon_grouped(timestamp, route_id)
       scheduled_routings = determine_scheduled_routings(scheduled_trips, timestamp, exclude_past_stops: true)
 
       routings = determine_routings(trips_by_direction, scheduled_routings)
+      soon_routings = determine_routings(soon_trips_by_direction, scheduled_routings)
 
       common_routings = determine_common_routings(routings)
 
@@ -88,6 +90,7 @@ class RouteProcessor
         recent_scheduled_routings,
         scheduled_headways_by_routes,
         routes_with_shared_tracks,
+        soon_routings,
       )
       puts "Finished processing route #{route_id}, latency #{Time.current - Time.zone.at(timestamp)}"
       RedisStore.update_processed_route_latency(route_id, Time.current - Time.zone.at(timestamp))

@@ -1,13 +1,13 @@
 class RouteAnalyzer
   SLOW_SECTION_STATIONS_RANGE = 3..7
 
-  def self.analyze_route(route_id, processed_trips, actual_routings, common_routings, timestamp, scheduled_trips, scheduled_routings, recent_scheduled_routings, scheduled_headways_by_routes, routes_with_shared_tracks)
+  def self.analyze_route(route_id, processed_trips, actual_routings, common_routings, timestamp, scheduled_trips, scheduled_routings, recent_scheduled_routings, scheduled_headways_by_routes, routes_with_shared_tracks, soon_routings)
     stop_name_formatter = StopNameFormatter.new(actual_routings, scheduled_routings)
     travel_times_data = RedisStore.travel_times
     travel_times = travel_times_data ? Marshal.load(travel_times_data) : {}
-    changes = ServiceChangeAnalyzer.service_change_summary(route_id, actual_routings.to_h { |direction, routings|
+    changes = ServiceChangeAnalyzer.service_change_summary(route_id, soon_routings.to_h { |direction, routings|
       [direction, routings.filter { |r|
-        processed_trips[direction]["#{r.first}-#{r.last}-#{r.size}"]&.any? { |t| !t.is_phantom? } || processed_trips[direction]["#{r.first}-#{r.last}-#{r.size}"]&.size > 1
+        processed_trips[direction]["#{r.first}-#{r.last}-#{r.size}"]&.any? { |t| !t.is_phantom? } || processed_trips[direction]["#{r.first}-#{r.last}-#{r.size}"]&.size || 0 > 1
       }.presence || routings]
     }, scheduled_routings, recent_scheduled_routings, timestamp)
     max_delayed_time = max_delay(processed_trips)
